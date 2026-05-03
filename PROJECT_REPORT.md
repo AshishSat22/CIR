@@ -7,11 +7,13 @@ The rapid expansion of digital educational content, particularly on platforms li
 
 ---
 
-## 1. Project Overview
-**Project Name:** YTScholar  
-**Objective:** To develop a full-stack, AI-powered web application that automates the extraction of educational knowledge from YouTube lectures, synthesizing raw transcripts into highly structured, professional, and exam-ready study guides.
+## 1. Introduction
 
-YTScholar addresses the growing need for efficient digital learning by allowing students and professionals to instantly generate comprehensive notes—complete with executive summaries, key concepts, practical examples, and self-assessment questions—from any educational YouTube video.
+### 1.1 Problem Statement
+The digital era has democratized education by making thousands of high-quality video lectures available on platforms like YouTube. However, this vast amount of audio-visual content is fundamentally unstructured and time-consuming to review. Students and professionals often spend hours manually pausing, transcribing, and organizing notes from lengthy videos, leading to cognitive fatigue and inefficient knowledge retention. There is a critical lack of tools that can instantly parse complex lecture transcripts and automatically synthesize them into pedagogical, revision-friendly formats without requiring costly API subscriptions.
+
+### 1.2 Objective of the Project
+The primary objective of YTScholar is to develop a full-stack, AI-powered web application that automates the extraction of educational knowledge from YouTube lectures. By leveraging advanced Large Language Models (LLMs) and transcript-fetching APIs, the system aims to dynamically convert raw, often non-English or auto-generated captions, into highly structured, professional, and exam-ready study guides. Specifically, the project seeks to implement a cost-free, stateless architecture that outputs comprehensive notes—complete with core concepts, practical examples, and self-assessment questions—procedurally formatted into high-fidelity PDF documents.
 
 ---
 
