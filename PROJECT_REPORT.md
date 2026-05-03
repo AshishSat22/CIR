@@ -44,32 +44,43 @@ The project was architected using a modern, decoupled client-server model to ens
 
 ---
 
-## 3. Core Features & Implementation
+## 3. List of Concepts Used
+This project integrates several core computer science and software engineering methodologies:
+* **Decoupled Client-Server Architecture:** Strict separation of concerns between the React-based frontend and the Python FastAPI backend, communicating via RESTful API endpoints.
+* **Asynchronous Programming (Concurrency):** Utilizing `async/await` in JavaScript and Python's `asyncio` (patched with `nest_asyncio`) to ensure non-blocking network I/O during heavy LLM generation.
+* **Natural Language Processing (NLP) & Prompt Engineering:** Leveraging LLMs for cross-lingual translation, semantic summarization, and information extraction through highly structured system prompts.
+* **Text Segmentation (Chunking):** Applying LangChain's `RecursiveCharacterTextSplitter` to intelligently divide massive transcript strings into smaller, coherent segments to bypass LLM token limits.
+* **Procedural Document Generation:** Dynamically rendering raw Markdown data into high-fidelity PDF documents using coordinate-based layout engines (`ReportLab`).
+* **Reactive State Management:** Utilizing React hooks (`useState`) to transition the UI seamlessly through complex asynchronous loading states.
 
-### 3.1 Advanced Transcript Extraction
+---
+
+## 4. Core Features & Implementation
+
+### 4.1 Advanced Transcript Extraction
 The backend utilizes the `youtube-transcript-api` to bypass traditional headless browsers. 
 * **Intelligent Fallback System:** The application specifically targets English (`en`) transcripts. If unavailable, it intelligently falls back to the first available language (e.g., auto-generated Hindi). 
 * **Cross-Lingual Processing:** Raw, non-English transcripts are seamlessly translated and analyzed directly by the LLM, outputting a perfectly structured English study guide without manual intervention.
 
-### 3.2 The "3-3-3" Pedagogical Engine
+### 4.2 The "3-3-3" Pedagogical Engine
 Once the transcript is fetched and chunked (to handle lengthy videos without hitting context limits), it is passed to the AI engine with a highly engineered system prompt. The engine formats the output based on the "3-3-3 Rule":
 1. **3 Essential Concepts:** The core theoretical pillars of the lecture.
 2. **3 Practical Examples:** Real-world applications of the concepts.
 3. **3 Study Questions:** Self-assessment queries for active recall.
 
-### 3.3 Dynamic UI & State Management
+### 4.3 Dynamic UI & State Management
 The Next.js frontend employs React hooks (`useState`) to manage complex, asynchronous application states. Users are visually guided through the pipeline via dynamic UI indicators:
 * *Scanning Audio & Fetching Transcript...*
 * *Synthesizing Concepts & Extracting Knowledge...*
 * *Generating High-Fidelity PDF...*
 The layout is heavily optimized for mobile responsiveness, ensuring seamless operation across all device viewports.
 
-### 3.4 Procedural PDF Generation
+### 4.4 Procedural PDF Generation
 Instead of relying on browser-based HTML-to-PDF conversion, the FastAPI backend procedurally generates print-ready PDFs using `ReportLab`. The system parses the AI-generated Markdown and maps it to specific university-style typographic configurations (e.g., custom fonts, spacing, and header hierarchies).
 
 ---
 
-## 4. Challenges & Solutions
+## 5. Challenges & Solutions
 
 1. **Authentication Blockers with Free AI Models:**
    * *Challenge:* Initial attempts to use the `g4f` library resulted in authentication errors (`MissingAuthError`) as various backend proxy providers enforced API keys.
@@ -85,7 +96,7 @@ Instead of relying on browser-based HTML-to-PDF conversion, the FastAPI backend 
 
 ---
 
-## 5. Future Enhancements
+## 6. Future Enhancements
 * **Persistent Database Storage:** Implementing an SQLite or PostgreSQL database to cache previously generated notes by their unique YouTube Video ID, eliminating redundant API calls and providing a "User History" dashboard.
 * **Image Integration:** Parsing the video timeline to extract key frame screenshots and embedding them directly into the PDF Reference Box for visual context.
 * **Custom Customization:** Allowing users to select the depth of the notes (e.g., "Brief Summary" vs. "Deep Dive").
