@@ -22,6 +22,22 @@ from io import BytesIO
 from dotenv import load_dotenv
 
 
+# --- Anti-IP Block Patch ---
+import requests
+from curl_cffi import requests as cffi_requests
+
+class PatchedSession(cffi_requests.Session):
+    def __init__(self, *args, **kwargs):
+        kwargs['impersonate'] = 'chrome110'
+        super().__init__(*args, **kwargs)
+    
+    @property
+    def cookies(self):
+        return super().cookies
+
+requests.Session = PatchedSession
+# ---------------------------
+
 load_dotenv()
 
 app = FastAPI()
@@ -136,7 +152,8 @@ async def extract_knowledge(request: ExtractRequest):
         notes = process_transcript_with_llm(formatted_transcript)
         return {"notes": notes}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        raise HTTPException(status_code=500, detail=traceback.format_exc())
 
 @app.post("/api/generate-pdf")
 async def generate_pdf(request: PDFRequest):
