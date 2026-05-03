@@ -15,6 +15,13 @@ The digital era has democratized education by making thousands of high-quality v
 ### 1.2 Objective of the Project
 The primary objective of YTScholar is to develop a full-stack, AI-powered web application that automates the extraction of educational knowledge from YouTube lectures. By leveraging advanced Large Language Models (LLMs) and transcript-fetching APIs, the system aims to dynamically convert raw, often non-English or auto-generated captions, into highly structured, professional, and exam-ready study guides. Specifically, the project seeks to implement a cost-free, stateless architecture that outputs comprehensive notes—complete with core concepts, practical examples, and self-assessment questions—procedurally formatted into high-fidelity PDF documents.
 
+### 1.3 Applications of the Project
+YTScholar's automated synthesis engine has several highly impactful real-world applications across different domains:
+* **Academic Exam Preparation:** Students can convert semester-long YouTube lecture series into concise, printed PDF study guides for rapid pre-exam revision.
+* **Corporate Training & Upskilling:** Professionals watching lengthy tech talks, webinars, or coding tutorials can instantly extract the core methodologies and practical examples without watching the entire video.
+* **Accessibility & Language Barrier Reduction:** Because the system automatically translates non-English (e.g., Hindi auto-generated) captions into English structured notes, it democratizes access to regional educational content for a global audience.
+* **Research & Content Curation:** Researchers and content creators can quickly skim through the essential thesis and chronological breakdown of long-form video essays or documentaries to gather citations and key arguments.
+
 ---
 
 ## 2. System Architecture & Tech Stack
