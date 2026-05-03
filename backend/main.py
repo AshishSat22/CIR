@@ -22,22 +22,6 @@ from io import BytesIO
 from dotenv import load_dotenv
 
 
-# --- Anti-IP Block Patch ---
-import requests
-from curl_cffi import requests as cffi_requests
-
-class PatchedSession(cffi_requests.Session):
-    def __init__(self, *args, **kwargs):
-        kwargs['impersonate'] = 'chrome110'
-        super().__init__(*args, **kwargs)
-    
-    @property
-    def cookies(self):
-        return super().cookies
-
-requests.Session = PatchedSession
-# ---------------------------
-
 load_dotenv()
 
 app = FastAPI()
@@ -138,7 +122,10 @@ async def extract_knowledge(request: ExtractRequest):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
         
     try:
-        transcript_list = YouTubeTranscriptApi().list(video_id)
+        from curl_cffi.requests import Session
+        session = Session(impersonate="chrome110")
+        api_client = YouTubeTranscriptApi(http_client=session)
+        transcript_list = api_client.list(video_id)
         try:
             transcript = transcript_list.find_transcript(['en', 'en-US', 'en-GB'])
         except:
@@ -152,8 +139,7 @@ async def extract_knowledge(request: ExtractRequest):
         notes = process_transcript_with_llm(formatted_transcript)
         return {"notes": notes}
     except Exception as e:
-        import traceback
-        raise HTTPException(status_code=500, detail=traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate-pdf")
 async def generate_pdf(request: PDFRequest):
