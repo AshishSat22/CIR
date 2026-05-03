@@ -3,8 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
+from pytubefix import YouTube
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import g4f
 from g4f.client import Client
@@ -122,19 +121,30 @@ async def extract_knowledge(request: ExtractRequest):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
         
     try:
-        from curl_cffi.requests import Session
-        session = Session(impersonate="chrome110")
-        api_client = YouTubeTranscriptApi(http_client=session)
-        transcript_list = api_client.list(video_id)
-        try:
-            transcript = transcript_list.find_transcript(['en', 'en-US', 'en-GB'])
-        except:
-            # Fallback to the first available transcript (any language)
-            transcript = list(transcript_list)[0]
-            
-        fetched_transcript = transcript.fetch()
-        formatter = TextFormatter()
-        formatted_transcript = formatter.format_transcript(fetched_transcript)
+        yt = YouTube(f'https://www.youtube.com/watch?v={video_id}')
+        
+        # Try finding English first
+        caption = yt.captions.get_by_language_code('en') or \
+                  yt.captions.get_by_language_code('en-US') or \
+                  yt.captions.get_by_language_code('en-GB') or \
+                  yt.captions.get_by_language_code('a.en') # auto-generated English
+        
+        if not caption:
+            # Fallback to the first available caption
+            if yt.captions:
+                caption = list(yt.captions.values())[0]
+            else:
+                raise HTTPException(status_code=400, detail="No transcripts found for this video.")
+        
+        data = caption.json_captions
+        formatted_transcript = ""
+        if 'events' in data:
+            for event in data['events']:
+                if 'segs' in event:
+                    for seg in event['segs']:
+                        if 'utf8' in seg:
+                            formatted_transcript += seg['utf8']
+                    formatted_transcript += " "
         
         notes = process_transcript_with_llm(formatted_transcript)
         return {"notes": notes}

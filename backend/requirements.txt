@@ -1,9 +1,8 @@
 fastapi
 uvicorn
-youtube-transcript-api
+pytubefix
 langchain-text-splitters
 g4f
-curl_cffi
 nest_asyncio
 python-dotenv
 reportlab
