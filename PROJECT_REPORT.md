@@ -24,7 +24,12 @@ YTScholar's automated synthesis engine has several highly impactful real-world a
 
 ---
 
-## 2. System Architecture & Tech Stack
+## 2. Project Description
+YTScholar is a full-stack educational web application designed to transform passive video consumption into active learning. At its core, the system acts as an automated, AI-powered study assistant. An end-user simply pastes a YouTube video URL into a clean, minimalist web interface. Behind the scenes, the application extracts the video's audio transcript and securely transmits it to a Large Language Model (LLM). The AI acts as a digital tutor, analyzing the raw dialogue and restructuring it into a pedagogical format. Finally, the processed data is instantly rendered into a beautifully formatted, university-style PDF document that the user can download. By entirely abstracting the complex processes of video caption extraction, natural language summarization, and document generation, YTScholar provides a frictionless, one-click solution for generating high-quality study materials.
+
+---
+
+## 3. System Architecture & Tech Stack
 The project was architected using a modern, decoupled client-server model to ensure scalability and maintainability.
 
 ### Frontend (Client-Side)
@@ -44,7 +49,7 @@ The project was architected using a modern, decoupled client-server model to ens
 
 ---
 
-## 3. List of Concepts Used
+## 4. List of Concepts Used
 This project integrates several core computer science and software engineering methodologies:
 * **Decoupled Client-Server Architecture:** Strict separation of concerns between the React-based frontend and the Python FastAPI backend, communicating via RESTful API endpoints.
 * **Asynchronous Programming (Concurrency):** Utilizing `async/await` in JavaScript and Python's `asyncio` (patched with `nest_asyncio`) to ensure non-blocking network I/O during heavy LLM generation.
@@ -55,32 +60,32 @@ This project integrates several core computer science and software engineering m
 
 ---
 
-## 4. Core Features & Implementation
+## 5. Core Features & Implementation
 
-### 4.1 Advanced Transcript Extraction
+### 5.1 Advanced Transcript Extraction
 The backend utilizes the `youtube-transcript-api` to bypass traditional headless browsers. 
 * **Intelligent Fallback System:** The application specifically targets English (`en`) transcripts. If unavailable, it intelligently falls back to the first available language (e.g., auto-generated Hindi). 
 * **Cross-Lingual Processing:** Raw, non-English transcripts are seamlessly translated and analyzed directly by the LLM, outputting a perfectly structured English study guide without manual intervention.
 
-### 4.2 The "3-3-3" Pedagogical Engine
+### 5.2 The "3-3-3" Pedagogical Engine
 Once the transcript is fetched and chunked (to handle lengthy videos without hitting context limits), it is passed to the AI engine with a highly engineered system prompt. The engine formats the output based on the "3-3-3 Rule":
 1. **3 Essential Concepts:** The core theoretical pillars of the lecture.
 2. **3 Practical Examples:** Real-world applications of the concepts.
 3. **3 Study Questions:** Self-assessment queries for active recall.
 
-### 4.3 Dynamic UI & State Management
+### 5.3 Dynamic UI & State Management
 The Next.js frontend employs React hooks (`useState`) to manage complex, asynchronous application states. Users are visually guided through the pipeline via dynamic UI indicators:
 * *Scanning Audio & Fetching Transcript...*
 * *Synthesizing Concepts & Extracting Knowledge...*
 * *Generating High-Fidelity PDF...*
 The layout is heavily optimized for mobile responsiveness, ensuring seamless operation across all device viewports.
 
-### 4.4 Procedural PDF Generation
+### 5.4 Procedural PDF Generation
 Instead of relying on browser-based HTML-to-PDF conversion, the FastAPI backend procedurally generates print-ready PDFs using `ReportLab`. The system parses the AI-generated Markdown and maps it to specific university-style typographic configurations (e.g., custom fonts, spacing, and header hierarchies).
 
 ---
 
-## 5. Challenges & Solutions
+## 6. Challenges & Solutions
 
 1. **Authentication Blockers with Free AI Models:**
    * *Challenge:* Initial attempts to use the `g4f` library resulted in authentication errors (`MissingAuthError`) as various backend proxy providers enforced API keys.
@@ -96,7 +101,7 @@ Instead of relying on browser-based HTML-to-PDF conversion, the FastAPI backend 
 
 ---
 
-## 6. Future Enhancements
+## 7. Future Enhancements
 * **Persistent Database Storage:** Implementing an SQLite or PostgreSQL database to cache previously generated notes by their unique YouTube Video ID, eliminating redundant API calls and providing a "User History" dashboard.
 * **Image Integration:** Parsing the video timeline to extract key frame screenshots and embedding them directly into the PDF Reference Box for visual context.
 * **Custom Customization:** Allowing users to select the depth of the notes (e.g., "Brief Summary" vs. "Deep Dive").
