@@ -1,4 +1,4 @@
-# Project Report: YTScholar
+# Project Title: YTScholar - An AI-Powered Engine for Automated Video Lecture Synthesis
 
 ## Abstract
 The rapid expansion of digital educational content, particularly on platforms like YouTube, presents a significant challenge for effective knowledge retention. YTScholar is an AI-powered full-stack web application designed to bridge this gap by automating the synthesis of video lectures into structured, exam-ready study materials. Utilizing a decoupled architecture with a Next.js frontend and a FastAPI backend, the system extracts transcripts—dynamically handling multi-lingual and auto-generated captions—and processes them through a cost-free Large Language Model (LLM) proxy. A custom pedagogical engine applies a "3-3-3 Rule" to extract essential concepts, practical examples, and self-assessment questions, which are then procedurally formatted into high-fidelity PDF documents. This project demonstrates a robust, stateless approach to educational technology, offering a highly responsive tool to enhance learning efficiency.
