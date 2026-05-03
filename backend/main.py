@@ -122,9 +122,16 @@ async def extract_knowledge(request: ExtractRequest):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
         
     try:
-        transcript = YouTubeTranscriptApi().fetch(video_id)
+        transcript_list = YouTubeTranscriptApi().list(video_id)
+        try:
+            transcript = transcript_list.find_transcript(['en', 'en-US', 'en-GB'])
+        except:
+            # Fallback to the first available transcript (any language)
+            transcript = list(transcript_list)[0]
+            
+        fetched_transcript = transcript.fetch()
         formatter = TextFormatter()
-        formatted_transcript = formatter.format_transcript(transcript)
+        formatted_transcript = formatter.format_transcript(fetched_transcript)
         
         notes = process_transcript_with_llm(formatted_transcript)
         return {"notes": notes}
