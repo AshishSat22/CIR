@@ -4,6 +4,9 @@ from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pytubefix import YouTube
+import yt_dlp
+import requests
+import time
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import g4f
 from g4f.client import Client
@@ -121,31 +124,74 @@ async def extract_knowledge(request: ExtractRequest):
         raise HTTPException(status_code=400, detail="Invalid YouTube URL")
         
     try:
-        yt = YouTube(f'https://www.youtube.com/watch?v={video_id}')
-        
-        # Try finding English first
-        caption = yt.captions.get_by_language_code('en') or \
-                  yt.captions.get_by_language_code('en-US') or \
-                  yt.captions.get_by_language_code('en-GB') or \
-                  yt.captions.get_by_language_code('a.en') # auto-generated English
-        
-        if not caption:
-            # Fallback to the first available caption
-            if yt.captions:
-                caption = list(yt.captions.values())[0]
-            else:
-                raise HTTPException(status_code=400, detail="No transcripts found for this video.")
-        
-        data = caption.json_captions
         formatted_transcript = ""
-        if 'events' in data:
-            for event in data['events']:
-                if 'segs' in event:
-                    for seg in event['segs']:
-                        if 'utf8' in seg:
-                            formatted_transcript += seg['utf8']
-                    formatted_transcript += " "
         
+        # METHOD 1: Pytubefix
+        try:
+            yt = YouTube(f'https://www.youtube.com/watch?v={video_id}')
+            caption = yt.captions.get_by_language_code('en') or \
+                      yt.captions.get_by_language_code('en-US') or \
+                      yt.captions.get_by_language_code('en-GB') or \
+                      yt.captions.get_by_language_code('a.en')
+            
+            if not caption and yt.captions:
+                caption = list(yt.captions.values())[0]
+                
+            if caption:
+                data = caption.json_captions
+                if 'events' in data:
+                    for event in data['events']:
+                        if 'segs' in event:
+                            for seg in event['segs']:
+                                if 'utf8' in seg:
+                                    formatted_transcript += seg['utf8']
+                            formatted_transcript += " "
+        except Exception as e:
+            print(f"Pytubefix failed: {e}")
+
+        # METHOD 2: YT-DLP (Fallback)
+        if not formatted_transcript:
+            try:
+                ydl_opts = {
+                    'quiet': True,
+                    'skip_download': True,
+                    'writesubtitles': True,
+                    'writeautomaticsub': True,
+                    'subtitleslangs': ['en', '.*'],
+                    'nocheckcertificate': True,
+                    'extractor_args': {'youtube': {'player_client': ['android']}}
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}', download=False)
+                    sub_url = None
+                    if 'requested_subtitles' in info and info['requested_subtitles']:
+                        sub_url = list(info['requested_subtitles'].values())[0]['url']
+                    elif 'automatic_captions' in info:
+                        # Grab first auto-generated caption
+                        langs = list(info['automatic_captions'].values())[0]
+                        for f in langs:
+                            if f.get('ext') == 'json3':
+                                sub_url = f['url']
+                                break
+                    
+                    if sub_url:
+                        if 'json3' not in sub_url:
+                            sub_url = sub_url.replace('fmt=vtt', 'fmt=json3')
+                        resp = requests.get(sub_url)
+                        data = resp.json()
+                        if 'events' in data:
+                            for event in data['events']:
+                                if 'segs' in event:
+                                    for seg in event['segs']:
+                                        if 'utf8' in seg:
+                                            formatted_transcript += seg['utf8']
+                                    formatted_transcript += " "
+            except Exception as e:
+                print(f"YT-DLP failed: {e}")
+
+        if not formatted_transcript:
+            raise HTTPException(status_code=400, detail="No transcripts could be retrieved using any method.")
+            
         notes = process_transcript_with_llm(formatted_transcript)
         return {"notes": notes}
     except Exception as e:
