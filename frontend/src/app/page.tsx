@@ -22,7 +22,8 @@ export default function Home() {
       await new Promise(resolve => setTimeout(resolve, 1500));
       setStatus("synthesizing");
       
-      const response = await fetch("http://localhost:8000/api/extract", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/extract`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
@@ -46,7 +47,8 @@ export default function Home() {
   const handleDownloadPDF = async () => {
     try {
       setStatus("generating_pdf");
-      const response = await fetch("http://localhost:8000/api/generate-pdf", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/generate-pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ markdown_text: notes }),
