@@ -1,21 +1,8 @@
-import os
 from flask import Flask, render_template, request, jsonify
-from dotenv import load_dotenv
-import google.generativeai as genai
+
 import PyPDF2
 import io
 import re
-import json
-
-load_dotenv()
-
-# Configure Gemini
-GENAI_API_KEY = os.getenv("GOOGLE_API_KEY")
-if GENAI_API_KEY:
-    genai.configure(api_key=GENAI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    model = None
 
 app = Flask(__name__)
 
@@ -31,48 +18,37 @@ SKILL_KEYWORDS = {
 # Industry Standards Benchmarks (Scale 1-5)
 INDUSTRY_STANDARDS = {
     "AI/ML Engineer": {
-        "Programming": 5, "AI/ML": 5, "System Design": 3, "Cybersecurity": 2, "Cloud Computing": 4,
-        "Leadership": 3, "Communication": 4, "Teamwork": 5
+        "Programming": 5, "AI/ML": 5, "System Design": 3, "Cybersecurity": 2, "Cloud Computing": 4
     },
     "Full-Stack Developer": {
-        "Programming": 5, "AI/ML": 2, "System Design": 4, "Cybersecurity": 3, "Cloud Computing": 3,
-        "Leadership": 3, "Communication": 5, "Teamwork": 5
+        "Programming": 5, "AI/ML": 2, "System Design": 4, "Cybersecurity": 3, "Cloud Computing": 3
     },
     "Frontend Developer": {
-        "Programming": 5, "AI/ML": 1, "System Design": 3, "Cybersecurity": 2, "Cloud Computing": 2,
-        "Leadership": 2, "Communication": 5, "Teamwork": 5
+        "Programming": 5, "AI/ML": 1, "System Design": 3, "Cybersecurity": 2, "Cloud Computing": 2
     },
     "Backend Developer": {
-        "Programming": 5, "AI/ML": 2, "System Design": 5, "Cybersecurity": 3, "Cloud Computing": 4,
-        "Leadership": 3, "Communication": 4, "Teamwork": 5
+        "Programming": 5, "AI/ML": 2, "System Design": 5, "Cybersecurity": 3, "Cloud Computing": 4
     },
     "DevOps Engineer": {
-        "Programming": 3, "AI/ML": 1, "System Design": 4, "Cybersecurity": 4, "Cloud Computing": 5,
-        "Leadership": 4, "Communication": 4, "Teamwork": 5
+        "Programming": 3, "AI/ML": 1, "System Design": 4, "Cybersecurity": 4, "Cloud Computing": 5
     },
     "Cloud Architect": {
-        "Programming": 3, "AI/ML": 2, "System Design": 5, "Cybersecurity": 4, "Cloud Computing": 5,
-        "Leadership": 5, "Communication": 5, "Teamwork": 4
+        "Programming": 3, "AI/ML": 2, "System Design": 5, "Cybersecurity": 4, "Cloud Computing": 5
     },
     "Cybersecurity Specialist": {
-        "Programming": 3, "AI/ML": 2, "System Design": 3, "Cybersecurity": 5, "Cloud Computing": 4,
-        "Leadership": 3, "Communication": 4, "Teamwork": 4
+        "Programming": 3, "AI/ML": 2, "System Design": 3, "Cybersecurity": 5, "Cloud Computing": 4
     },
     "Data Scientist": {
-        "Programming": 4, "AI/ML": 5, "System Design": 2, "Cybersecurity": 1, "Cloud Computing": 3,
-        "Leadership": 2, "Communication": 5, "Teamwork": 4
+        "Programming": 4, "AI/ML": 5, "System Design": 2, "Cybersecurity": 1, "Cloud Computing": 3
     },
     "Data Engineer": {
-        "Programming": 5, "AI/ML": 3, "System Design": 4, "Cybersecurity": 2, "Cloud Computing": 4,
-        "Leadership": 3, "Communication": 4, "Teamwork": 5
+        "Programming": 5, "AI/ML": 3, "System Design": 4, "Cybersecurity": 2, "Cloud Computing": 4
     },
     "MLOps Engineer": {
-        "Programming": 4, "AI/ML": 4, "System Design": 4, "Cybersecurity": 2, "Cloud Computing": 5,
-        "Leadership": 4, "Communication": 4, "Teamwork": 5
+        "Programming": 4, "AI/ML": 4, "System Design": 4, "Cybersecurity": 2, "Cloud Computing": 5
     },
     "Security Architect": {
-        "Programming": 4, "AI/ML": 2, "System Design": 5, "Cybersecurity": 5, "Cloud Computing": 5,
-        "Leadership": 5, "Communication": 5, "Teamwork": 4
+        "Programming": 4, "AI/ML": 2, "System Design": 5, "Cybersecurity": 5, "Cloud Computing": 5
     }
 }
 
@@ -144,6 +120,7 @@ def index():
 
 @app.route('/upload_resume', methods=['POST'])
 def upload_resume():
+    # ... (existing code for upload_resume)
     if 'resume' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
     
@@ -151,69 +128,59 @@ def upload_resume():
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
 
-    if not model:
-        return jsonify({"error": "AI Model not configured. Please set GOOGLE_API_KEY."}), 500
-
     try:
         pdf_reader = PyPDF2.PdfReader(io.BytesIO(file.read()))
         text = ""
         for page in pdf_reader.pages:
-            text += page.extract_text()
+            text += page.extract_text().lower()
 
-        # Gemini Prompt for Semantic Parsing
-        prompt = f"""
-        Analyze the following resume text and provide a JSON response evaluating the candidate's skill levels on a scale of 1-5 for the following categories:
-        1. Programming
-        2. AI/ML
-        3. System Design
-        4. Cybersecurity
-        5. Cloud Computing
-        6. Leadership (Extract from project lead roles, team management, etc.)
-        7. Communication (Extract from presentations, documentation, public speaking)
-        8. Teamwork (Extract from collaborative projects)
-
-        Also provide a short 'message' summarizing the resume's strength.
-
-        Rules:
-        - If a skill is not mentioned at all, score it 1.
-        - Look for semantic context (e.g., 'Kubernetes' implies Cloud Computing).
-        - Be objective and critical.
-
-        Resume Text:
-        {text}
-
-        Return ONLY valid JSON.
-        """
-
-        response = model.generate_content(prompt)
-        
-        # Clean response text (remove markdown code blocks if present)
-        response_text = response.text.strip()
-        if response_text.startswith("```json"):
-            response_text = response_text[7:-3].strip()
-        elif response_text.startswith("```"):
-            response_text = response_text[3:-3].strip()
-            
-        result = json.loads(response_text)
-        
-        # Format for frontend
-        extracted_skills = {
-            "Programming": result.get("Programming", 1),
-            "AI/ML": result.get("AI/ML", 1),
-            "System Design": result.get("System Design", 1),
-            "Cybersecurity": result.get("Cybersecurity", 1),
-            "Cloud Computing": result.get("Cloud Computing", 1),
-            "Leadership": result.get("Leadership", 1),
-            "Communication": result.get("Communication", 1),
-            "Teamwork": result.get("Teamwork", 1)
+        # Section Extraction (Experience, Projects, Internships)
+        sections = {
+            "experience": re.findall(r'(experience|work history|employment)(.*?)(projects|skills|education|internships|$)', text, re.S),
+            "projects": re.findall(r'(projects|academic projects)(.*?)(experience|skills|education|internships|$)', text, re.S),
+            "internships": re.findall(r'(internships|training)(.*?)(experience|skills|education|projects|$)', text, re.S)
         }
+        
+        # Flatten section text
+        exp_text = " ".join([s[1] for s in sections['experience']])
+        proj_text = " ".join([s[1] for s in sections['projects']])
+        intern_text = " ".join([s[1] for s in sections['internships']])
+        high_value_text = exp_text + " " + proj_text + " " + intern_text
+        
+        # New Parameters
+        complexity_keywords = ["distributed", "scalable", "high-performance", "real-time", "end-to-end", "optimized", "concurrency"]
+        achievement_keywords = ["winner", "rank", "award", "scholarship", "first place", "certified"]
+        leadership_keywords = ["led", "managed", "mentored", "coordinated", "architected"]
 
-        return jsonify({
-            "extracted_skills": extracted_skills, 
-            "message": result.get("message", "High-Precision AI Analysis Complete!")
-        })
+        extracted_skills = {}
+        for skill_cat, keywords in SKILL_KEYWORDS.items():
+            unique_found = [kw for kw in keywords if re.search(r'\b' + re.escape(kw) + r'\b', text)]
+            total_mentions = sum(len(re.findall(r'\b' + re.escape(kw) + r'\b', text)) for kw in keywords)
+            hv_mentions = sum(1 for kw in keywords if re.search(r'\b' + re.escape(kw) + r'\b', high_value_text))
+            
+            complexity_found = 0
+            leadership_found = 0
+            for kw in unique_found:
+                context_pattern = rf'.{{0,60}}\b{re.escape(kw)}\b.{{0,60}}'
+                contexts = re.findall(context_pattern, text)
+                for ctx in contexts:
+                    if any(c in ctx for c in complexity_keywords): complexity_found += 1
+                    if any(l in ctx for l in leadership_keywords): leadership_found += 1
+
+            global_achievements = sum(1 for a in achievement_keywords if re.search(r'\b' + re.escape(a) + r'\b', text))
+
+            score = 1 # Base
+            if len(unique_found) >= 1: score += 1
+            if total_mentions > 3: score += 1
+            if hv_mentions >= 2: score += 0.5
+            if complexity_found >= 1: score += 1
+            if leadership_found >= 1: score += 0.5
+            if global_achievements >= 1: score += 0.5
+            extracted_skills[skill_cat] = min(5, round(score))
+
+        return jsonify({"extracted_skills": extracted_skills, "message": "High-Precision Analysis Complete!"})
     except Exception as e:
-        return jsonify({"error": f"Failed to parse resume: {str(e)}"}), 500
+        return jsonify({"error": f"Failed to parse PDF: {str(e)}"}), 500
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -222,57 +189,65 @@ def analyze():
         "AI/ML": int(request.form.get('AI/ML', 1)),
         "System Design": int(request.form.get('System Design', 1)),
         "Cybersecurity": int(request.form.get('Cybersecurity', 1)),
-        "Cloud Computing": int(request.form.get('Cloud Computing', 1)),
-        "Leadership": int(request.form.get('Leadership', 1)),
-        "Communication": int(request.form.get('Communication', 1)),
-        "Teamwork": int(request.form.get('Teamwork', 1))
+        "Cloud Computing": int(request.form.get('Cloud Computing', 1))
     }
     
     target_role = request.form.get('target_role', 'AI/ML Engineer')
     standards = INDUSTRY_STANDARDS.get(target_role)
     
-    if not model:
-        return jsonify({"error": "AI Model not configured."}), 500
-
-    try:
-        # Prompt for Dynamic Roadmap and Match Score
-        prompt = f"""
-        Act as a high-end career coach. Compare the following user skill levels against the industry standard for the role: {target_role}.
+    # Calculate Gaps
+    gaps = {}
+    total_match = 0
+    for skill, value in standards.items():
+        gap = max(0, value - user_skills[skill])
+        gaps[skill] = gap
+        total_match += (1 - (gap / 5)) * 20 
         
-        User Skills: {json.dumps(user_skills)}
-        Industry Standard: {json.dumps(standards)}
-
-        Tasks:
-        1. Calculate a 'match_percentage' (0-100) based on how close the user is to the standard.
-        2. Generate a 3-phase 'roadmap' (Foundation, Advanced Mastery, Expert Excellence) with specific, non-generic steps to bridge the gaps. 
-           Each step should have 'phase', 'skill', 'duration', and 'action'.
-        3. Provide 3 'action_cards' for the top 3 gaps. Each card should have 'skill' and 'details'. 
-           'details' must include: 'Project' (a specific project to build), 'Course' (a specific recommended course), 'Books', 'CourseraLink', and 'RoadmapSH'.
-        4. Provide 'resume_advice' (a personalized tip).
-
-        Return ONLY valid JSON.
-        """
-
-        response = model.generate_content(prompt)
-        response_text = response.text.strip()
-        if response_text.startswith("```json"):
-            response_text = response_text[7:-3].strip()
-        elif response_text.startswith("```"):
-            response_text = response_text[3:-3].strip()
-            
-        result = json.loads(response_text)
-
-        return jsonify({
-            "role": target_role,
-            "match_percentage": result.get("match_percentage", 0),
-            "user_skills": user_skills,
-            "industry_skills": standards,
-            "roadmap": result.get("roadmap", []),
-            "action_cards": result.get("action_cards", []),
-            "resume_advice": result.get("resume_advice", "Keep learning!")
+    # ROLE-SPECIFIC ROADMAP GENERATION
+    role_steps = ROLE_ROADMAP_STEPS.get(target_role, ["Master Core Fundamentals", "Build Industry Projects", "Prepare for Technical Interviews", "Get Certified"])
+    sorted_gaps = sorted(gaps.items(), key=lambda x: x[1], reverse=True)
+    
+    roadmap = []
+    phases = ["Foundation", "Advanced Mastery", "Expert Excellence"]
+    for i, step_text in enumerate(role_steps):
+        phase_idx = min(i // 2, 2)
+        # Link the step to the highest remaining gap
+        relevant_gap_skill = sorted_gaps[min(i, len(sorted_gaps)-1)][0]
+        gap_val = gaps[relevant_gap_skill]
+        
+        roadmap.append({
+            "phase": phases[phase_idx],
+            "skill": step_text,
+            "duration": f"{max(2, gap_val * 2)} Weeks",
+            "action": f"Critical step for {target_role} readiness. Focuses on bridging your {relevant_gap_skill} gap."
         })
-    except Exception as e:
-        return jsonify({"error": f"Failed to generate roadmap: {str(e)}"}), 500
+
+    # Action Cards
+    action_cards = []
+    for skill, gap_val in sorted_gaps[:3]:
+        if skill in RECOMMENDATIONS:
+            action_cards.append({
+                "skill": skill,
+                "details": RECOMMENDATIONS[skill]
+            })
+
+    # Dynamic Resume Advice
+    top_gap_skill = sorted_gaps[0][0] if sorted_gaps else "General"
+    advice = f"To excel as a {target_role}, your priority should be {top_gap_skill}. "
+    if gaps.get(top_gap_skill, 0) > 2:
+        advice += f"Follow the official roadmap.sh/{RECOMMENDATIONS[top_gap_skill]['RoadmapSH'].split('/')[-1]} path to master this domain."
+    else:
+        advice += "Your profile is highly competitive! Focus on high-level system design to reach the Architect tier."
+
+    return jsonify({
+        "role": target_role,
+        "match_percentage": round(total_match, 1),
+        "user_skills": user_skills,
+        "industry_skills": standards,
+        "roadmap": roadmap,
+        "action_cards": action_cards,
+        "resume_advice": advice
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
